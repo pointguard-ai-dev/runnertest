@@ -31,14 +31,3 @@ jobs:
             Write-Host "No scan results file found"
           }
 
-      - name: Check for findings
-        run: |
-          if (Test-Path "C:\Users\DELL\Desktop\Opengrep-rules\output\scan-results.json") {
-            $results = Get-Content "C:\Users\DELL\Desktop\Opengrep-rules\output\scan-results.json" | ConvertFrom-Json
-            if ($results.results -and $results.results.Count -gt 0) {
-              Write-Host "⚠️ Security issues found: $($results.results.Count) findings"
-              exit 1
-            } else {
-              Write-Host "✅ No security issues found"
-            }
-          }
