@@ -1,0 +1,108 @@
+rules:
+  - id: azure-endpoint-url
+    pattern-regex: "https://[a-zA-Z0-9_-]+\\.(openai|cognitiveservices)\\.azure\\.com"
+    message: "Detected hardcoded Azure AI endpoint"
+    languages: [python]
+    severity: WARNING
+
+  - id: azure-ai-api-key-header
+    pattern-regex: "['\"]Ocp-Apim-Subscription-Key['\"]\\s*[:=]\\s*['\"][a-zA-Z0-9]{32,}['\"]"
+    message: "Detected Azure Cognitive Services API key in Ocp-Apim-Subscription-Key header"
+    languages: [python, json]
+    severity: ERROR
+
+  - id: azure-openai-api-key
+    pattern-regex: "(AZURE_OPENAI_API_KEY|azure_openai_key|openai_api_key)\\s*[:=]\\s*['\"][a-zA-Z0-9]{32,}['\"]"
+    message: "Detected hardcoded Azure OpenAI API key"
+    languages: [python, json, yaml]
+    severity: ERROR
+
+  - id: azure-ai-key-env-var
+    pattern-regex: "os\\.environ\\[['\"](?:AZURE_OPENAI_API_KEY|AZURE_COGNITIVE_SERVICES_KEY|OPENAI_API_KEY)['\"]\\]"
+    message: "Detected Azure AI API key environment variable usage (good practice)"
+    languages: [python]
+    severity: INFO
+
+  - id: azure-ai-subscription-key
+    pattern-regex: "(subscription[-_]key|cognitive[-_]services[-_]key)\\s*[:=]\\s*['\"][a-zA-Z0-9]{32,}['\"]"
+    message: "Detected hardcoded Azure Cognitive Services subscription key"
+    languages: [python, json, yaml]
+    severity: ERROR
+
+  - id: azure-ai-client-import
+    pattern-regex: "(from\\s+openai\\s+import\\s+AzureOpenAI|from\\s+azure\\.ai\\.projects\\s+import\\s+AIProjectClient)"
+    message: "Detected import of Azure AI client (AzureOpenAI or AIProjectClient)"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: azure-openai-sdk-imports
+    pattern-regex: "\\bfrom\\s+azure\\.ai\\.openai\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure OpenAI SDK usage"
+    languages: [python]
+    severity: WARNING
+    
+  - id: llama-azure-imports
+    pattern-regex: "\\bfrom\\s+llama_index\\.(embeddings|llms|vector_stores|multi_modal_llms)\\.azure_openai(?:search)?\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure-related imports from llama_index using Azure OpenAI modules"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: azure-search-imports
+    pattern-regex: "\\bfrom\\s+azure\\.search\\.documents\\.(indexes|models)\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure Cognitive Search client imports"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: langchain-azure-imports
+    pattern-regex: "\\bfrom\\s+(langchain_openai|langchain\\.vectorstores\\.azuresearch)\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure-related imports from LangChain modules"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: azure-mlclient-imports
+    pattern-regex: "\\bfrom\\s+azure\\.ai\\.ml\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure Machine Learning SDK import (MLClient)"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: azure-scope-url
+    pattern-regex: "['\"]https://cognitiveservices\\.azure\\.com/\\.default['\"]"
+    message: "Detected usage of Azure Cognitive Services scope URL"
+    languages: [python]
+    severity: WARNING
+    
+  - id: azure-textanalytics-imports
+    pattern-regex: "\\bfrom\\s+azure\\.ai\\.textanalytics\\s+import\\s+[a-zA-Z0-9_,\\s]+"
+    message: "Detected Azure Text Analytics SDK import"
+    languages: [python, json]
+    severity: WARNING
+
+  - id: azure-openai-client-init
+    pattern-regex: "AzureOpenAI\\s*\\("
+    message: "Detected instantiation of AzureOpenAI client"
+    languages: [python, json]
+    severity: WARNING
+
+  - id: azure-get-chat-completions
+    pattern-regex: "\\bget_chat_completions\\s*\\("
+    message: "Detected get_chat_completions call (Azure SDK method)"
+    languages: [python, json]
+    severity: INFO
+
+  - id: azure-ai-ps-endpoint
+    pattern-regex: "\\$azureOpenAIEndPoint\\b"
+    message: "Detected Azure OpenAI endpoint variable in PowerShell"
+    languages: [python, json]
+    severity: WARNING
+
+  - id: azure-ai-ps-header
+    pattern-regex: "'api-key'\\s*="
+    message: "Detected setting of Azure API key header in PowerShell"
+    languages: [python, json]
+    severity: WARNING
+    
+  - id: azure-langchain-deployment
+    pattern-regex: "deployment_name\\s*=\\s*['\"][a-zA-Z0-9_-]+['\"]"
+    message: "Detected deployment_name parameter, possibly for Azure-hosted LangChain models"
+    languages: [python, json]
+    severity: INFO
