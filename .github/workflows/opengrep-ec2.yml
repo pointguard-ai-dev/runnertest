@@ -12,13 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create output directory
-        run: |
-          if (!(Test-Path "/home/ubuntu/opengrep/output")) {
-            New-Item -ItemType Directory -Path "C:\Users\DELL\Desktop\Opengrep-rules\output" -Force
-          }
-
-      - name: Run OpenGrep with .opengrep rules
+      - name: Run OpenGrep with specific rule file
         run: |
           /home/ubuntu/opengrep-installer/opengrep_manylinux_x86 scan --json -o /home/ubuntu/opengrep/output/scan-results.json -f /home/ubuntu/opengrep/rules/detection-rule-for-azure-ai-usage.yml .
         shell: bash
