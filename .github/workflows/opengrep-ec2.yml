@@ -1,0 +1,36 @@
+name: Scan Repository with OpenGrep Rules in EC2 Env
+
+on:
+  workflow_dispatch:
+
+jobs:
+  opengrep-scan:
+    name: Run Opengrep Security Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create output directory
+        run: |
+          if (!(Test-Path "/home/ubuntu/opengrep/output")) {
+            New-Item -ItemType Directory -Path "C:\Users\DELL\Desktop\Opengrep-rules\output" -Force
+          }
+
+      - name: Run OpenGrep with .opengrep rules
+        run: |
+          /home/ubuntu/opengrep-installer/opengrep_manylinux_x86 scan --json -o /home/ubuntu/opengrep/output/scan-results.json -f /home/ubuntu/opengrep/rules/detection-rule-for-azure-ai-usage.yml .
+        shell: bash
+
+      - name: Display scan results
+        run: |
+          if [ -f "/home/ubuntu/opengrep/output/scan-results.json" ]; then
+            echo "=== OpenGrep Scan Results ==="
+            cat /home/ubuntu/opengrep/output/scan-results.json | jq '.'
+          else
+            echo "❌ No scan results file found"
+            exit 1
+          fi
+        shell: bash
+

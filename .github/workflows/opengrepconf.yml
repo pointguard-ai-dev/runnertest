@@ -1,0 +1,167 @@
+name: Scan Repository with OpenGrep configurable Rules
+
+on:
+  workflow_dispatch:
+    inputs:
+      rules_path:
+        description: 'Path to OpenGrep rules directory (relative to repository root)'
+        required: false
+        default: '.opengrep'
+        type: string
+      
+      output_file:
+        description: 'Output file name for scan results'
+        required: false
+        default: 'scan-results.json'
+        type: string
+      
+      output_directory:
+        description: 'Output directory path (absolute path)'
+        required: false
+        default: 'C:\Users\DELL\Desktop\Opengrep-rules\output'
+        type: string
+      
+      opengrep_executable:
+        description: 'Path to OpenGrep executable'
+        required: false
+        default: 'C:\Users\DELL\Desktop\Opengrep-rules\opengrep_windows_x86.exe'
+        type: string
+      
+      severity_threshold:
+        description: 'Fail workflow on severity level (INFO, WARNING, ERROR)'
+        required: false
+        default: 'INFO'
+        type: choice
+        options:
+          - INFO
+          - WARNING
+          - ERROR
+
+env:
+  RULES_PATH: ${{ github.event.inputs.rules_path || '.opengrep' }}
+  OUTPUT_FILE: ${{ github.event.inputs.output_file || 'scan-results.json' }}
+  OUTPUT_DIR: ${{ github.event.inputs.output_directory || 'C:\Users\DELL\Desktop\Opengrep-rules\output' }}
+  OPENGREP_EXE: ${{ github.event.inputs.opengrep_executable || 'C:\Users\DELL\Desktop\Opengrep-rules\opengrep_windows_x86.exe' }}
+  SEVERITY_THRESHOLD: ${{ github.event.inputs.severity_threshold || 'ERROR' }}
+
+jobs:
+  opengrep-scan:
+    name: Run Opengrep Security Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          Write-Host "=== Workflow Configuration ==="
+          Write-Host "Rules Path: $env:RULES_PATH"
+          Write-Host "Output Directory: $env:OUTPUT_DIR"
+          Write-Host "Output File: $env:OUTPUT_FILE"
+          Write-Host "OpenGrep Executable: $env:OPENGREP_EXE"
+          Write-Host "Severity Threshold: $env:SEVERITY_THRESHOLD"
+          Write-Host "================================"
+          
+          # Validate OpenGrep executable exists
+          if (!(Test-Path $env:OPENGREP_EXE)) {
+            Write-Host "❌ OpenGrep executable not found at: $env:OPENGREP_EXE"
+            exit 1
+          }
+          
+          # Validate rules directory exists
+          if (!(Test-Path $env:RULES_PATH)) {
+            Write-Host "❌ Rules directory not found at: $env:RULES_PATH"
+            exit 1
+          }
+
+      - name: Create output directory
+        run: |
+          if (!(Test-Path $env:OUTPUT_DIR)) {
+            Write-Host "Creating output directory: $env:OUTPUT_DIR"
+            New-Item -ItemType Directory -Path $env:OUTPUT_DIR -Force
+          } else {
+            Write-Host "Output directory already exists: $env:OUTPUT_DIR"
+          }
+
+      - name: Run OpenGrep with configurable paths
+        run: |
+          $outputPath = Join-Path $env:OUTPUT_DIR $env:OUTPUT_FILE
+          Write-Host "Running OpenGrep scan..."
+          Write-Host "Command: $env:OPENGREP_EXE scan --json -o `"$outputPath`" -f `"$env:RULES_PATH\`" ."
+          
+          & $env:OPENGREP_EXE scan --json -o "$outputPath" -f "$env:RULES_PATH\" .
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "⚠️ OpenGrep scan completed with warnings or errors"
+          } else {
+            Write-Host "✅ OpenGrep scan completed successfully"
+          }
+
+      - name: Display scan results
+        run: |
+          $outputPath = Join-Path $env:OUTPUT_DIR $env:OUTPUT_FILE
+          
+          if (Test-Path $outputPath) {
+            Write-Host "=== OpenGrep Scan Results ==="
+            $results = Get-Content $outputPath | ConvertFrom-Json
+            $results | ConvertTo-Json -Depth 10
+            Write-Host "================================"
+          } else {
+            Write-Host "❌ No scan results file found at: $outputPath"
+            exit 1
+          }
+
+      - name: Evaluate results based on severity threshold
+        run: |
+          $outputPath = Join-Path $env:OUTPUT_DIR $env:OUTPUT_FILE
+          
+          if (Test-Path $outputPath) {
+            $results = Get-Content $outputPath | ConvertFrom-Json
+            
+            if ($results.results -and $results.results.Count -gt 0) {
+              $errorCount = ($results.results | Where-Object { $_.extra.severity -eq "ERROR" }).Count
+              $warningCount = ($results.results | Where-Object { $_.extra.severity -eq "WARNING" }).Count
+              $infoCount = ($results.results | Where-Object { $_.extra.severity -eq "INFO" }).Count
+              
+              Write-Host "📊 Findings Summary:"
+              Write-Host "   ERROR: $errorCount"
+              Write-Host "   WARNING: $warningCount"
+              Write-Host "   INFO: $infoCount"
+              Write-Host "   TOTAL: $($results.results.Count)"
+              
+              $shouldFail = $false
+              
+              switch ($env:SEVERITY_THRESHOLD) {
+                "INFO" { 
+                  if ($infoCount -gt 0 -or $warningCount -gt 0 -or $errorCount -gt 0) { $shouldFail = $true }
+                }
+                "WARNING" { 
+                  if ($warningCount -gt 0 -or $errorCount -gt 0) { $shouldFail = $true }
+                }
+                "ERROR" { 
+                  if ($errorCount -gt 0) { $shouldFail = $true }
+                }
+              }
+              
+              if ($shouldFail) {
+                Write-Host "❌ Workflow failed due to findings at or above '$env:SEVERITY_THRESHOLD' severity level"
+                exit 1
+              } else {
+                Write-Host "✅ No findings at or above '$env:SEVERITY_THRESHOLD' severity level"
+              }
+            } else {
+              Write-Host "✅ No security issues found"
+            }
+          } else {
+            Write-Host "❌ Cannot evaluate results - scan results file not found"
+            exit 1
+          }
+
+      - name: Upload scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opengrep-scan-results
+          path: ${{ env.OUTPUT_DIR }}/${{ env.OUTPUT_FILE }}
+          retention-days: 30
