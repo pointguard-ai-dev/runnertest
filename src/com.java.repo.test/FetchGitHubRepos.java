@@ -261,7 +261,7 @@ public class FetchGitHubRepos {
     public static void main(String[] args) {
         // Configuration
         // String PAT_TOKEN = System.getenv("GITHUB_PAT_TOKEN");
-        String PAT_TOKEN = "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"; // Set this as environment variable
+        String PAT_TOKEN = "ghp_nZF65Y3hw********mWQGD0Bz6kn1GhapG"; // Set this as environment variable
         String TARGET_DIRECTORY = "C:\\Users\\DELL\\Desktop\\Repo-Test"; // Change this to your desired path
         String ORG_NAME = "gpraveen"; // Set this if you want to fetch org repos instead of user repos
         
