@@ -14,7 +14,7 @@ jobs:
 
       - name: Run OpenGrep with specific rule file
         run: |
-          /home/ubuntu/opengrep-installer/opengrep_manylinux_x86 scan --json -o /home/ubuntu/opengrep/output/scan-results.json -f /home/ubuntu/opengrep/rules/detection-rule-for-azure-ai-usage.yml .
+          /home/ubuntu/opengrep-installer/opengrep_manylinux_x86 scan --json -o /home/ubuntu/opengrep/output/scan-results.json -f /home/ubuntu/opengrep/rules/detection-rule-for-azure-ai-usage.yml ${target folder}
         shell: bash
 
       - name: Display scan results

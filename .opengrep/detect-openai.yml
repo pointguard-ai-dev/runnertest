@@ -1,0 +1,36 @@
+rules:
+  - id: detect-openai
+    languages: [python,json]
+    severity: INFO
+    message: "Possibly found usage of AI: OpenAI"
+    pattern-either:
+      - pattern: import openai
+      - pattern: from openai import $ANYTHING
+      - pattern: from openai import OpenAI
+      - pattern: OpenAI(...)
+      - pattern: $CLIENT.chat.completions.$FUNC(...)
+      - pattern: openai.ChatCompletion.create(...)
+      - pattern: openai.Completion.create(...)
+      - pattern: openai.Image.create(...)
+      - pattern: openai.Audio.transcribe(...)
+      - pattern: openai.Embedding.create(...)
+      - pattern: openai.Moderation.create(...)
+      - pattern: openai.api_key = $API_KEY
+      - pattern: openai.api_base = $API_BASE
+      - pattern: openai.api_type = $API_TYPE
+      - pattern: openai.api_version = $API_VERSION
+    metadata:
+      provider: openai
+      type: sdk
+      discoveredItemName: OpenAI
+      typeName: sdk
+  - id: azure-ai-client-import
+    pattern-regex: "(from\\s+openai\\s+import\\s+AzureOpenAI|from\\s+azure\\.ai\\.projects\\s+import\\s+AIProjectClient)"
+    message: "Detected import of Azure AI client (AzureOpenAI or AIProjectClient)"
+    languages: [python, json]
+    severity: WARNING
+    metadata:
+      provider: openai
+      type: sdk
+      discoveredItemName: OpenAI
+      typeName: sdk
